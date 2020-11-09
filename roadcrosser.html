@@ -67,13 +67,20 @@
             setInterval(mainLoop, 1000 / 50);
         }
 
-        //Frog controls
+        //Player controls
 
-        var frogXpos = 0;
-        var frogYpos = 0;
-        var frogXspeed = 5;
-        var frogYspeed = 5;
-        const FROG_SIZE = 40;
+        var playerXpos = 0;
+        var playerYpos = 0;
+        var playerXspeed = 5;
+        var playerYspeed = 5;
+        const PLAYER_SIZE = 40;
+        const PLAYER_WIDTH = 37;
+        const PLAYER_HEIGHT = 49;
+        var playerSpriteImgNum = 0;
+        
+        var playerSprites = [];
+        var playertotal = 16;
+        var playerRowCount = 0;
 
         //Car AI
 
@@ -111,6 +118,22 @@
 
         var img = new Image();
         var singleLoadImg = true;
+        
+        
+        for(var i = 0; i < playertotal; i++){
+            playerSprites[i] = new Array(2);
+
+            playerSprites[i][0] = PLAYER_WIDTH * (i % 4);
+            
+            if(i != 0 && i % 4 == 0){
+                playerRowCount++;
+                playerSprites[i][1] = PLAYER_HEIGHT * playerRowCount;
+            } 
+            else {
+                playerSprites[i][1] = PLAYER_HEIGHT * playerRowCount;
+            }
+
+        } // end func
 
 
 
@@ -123,7 +146,7 @@
 
 
                 drawingImages(img.bg, 0, 0, canvas.width, canvas.height); //Background for game
-                drawingImages(img.player, frogXpos, frogYpos, FROG_SIZE, FROG_SIZE); //Frog image, position and size
+                drawingImages(img.player, playerXpos, playerYpos, PLAYER_SIZE, PLAYER_SIZE); //Player image, position and size
                 textRender('Lives: ' + lives, 'white', 15, 25, '20px Arial'); //Lives visual text
                 textRender('Level: ' + level, 'white', canvas.width - 100, 25, '20px Arial'); //Level visual text
 
@@ -139,9 +162,9 @@
                     starting = false;
 
                 }
-                frogMove();
+                playerMove();
                 carMove();
-
+                playerAnimate();
 
                 renderObstacles();
                 arrayCarMove();
@@ -166,11 +189,11 @@
                     car.carXpos = 0 - car.CAR_SIZE;
                     car.carSpeed = Math.floor(Math.random() * (maxSpeed + minSpeed) + minSpeed); // Speed controls
                 }
-                if (frogYpos + FROG_SIZE > car.carYpos && frogYpos < car.carYpos + car.CAR_SIZE &&
-                    frogXpos + FROG_SIZE > car.carXpos && frogXpos < car.carXpos + car.CAR_SIZE
+                if (playerYpos + PLAYER_SIZE > car.carYpos && playerYpos < car.carYpos + car.CAR_SIZE &&
+                    playerXpos + PLAYER_SIZE > car.carXpos && playerXpos < car.carXpos + car.CAR_SIZE
                 ) { // Collison with the cars of the car array
-                    frogYpos = canvas.height - FROG_SIZE;
-                    frogXpos = canvas.width / 2 - FROG_SIZE / 2;
+                    playerYpos = canvas.height - PLAYER_SIZE;
+                    playerXpos = canvas.width / 2 - PLAYER_SIZE / 2;
                     lives--;
                     if (lives < 1) {
                         gameRun = false;
@@ -238,6 +261,17 @@
             }
         }
 
+        function playerAnimate() {
+            playerSrcX = playerSprites[Math.floor(playerSpriteImgNum)][0];
+            playerSrcY = playerSprites[Math.floor(playerSpriteImgNum)][1];
+            
+            playerSpriteImgNum+= 0.1;
+            
+            if(playerSpriteImgNum >= playertotal){
+               playerSpriteImgNum = 0;
+            }
+        }
+        
         function newIMG() {
             if (singleLoadImg == true) {
                 new Image();
@@ -248,26 +282,26 @@
         }
 
 
-        function frogMove() {
+        function playerMove() {
             if (upArrowKeyPressed) {
-                frogYpos -= frogYspeed;
-                if (frogYpos < 0) {
-                    frogYpos = canvas.height - FROG_SIZE
+                playerYpos -= playerYspeed;
+                if (playerYpos < 0) {
+                    playerYpos = canvas.height - PLAYER_SIZE
                     level++; // When touching top edge level up
                 }
 
             }
 
-            if (downArrowKeyPressed && frogYpos < canvas.height - FROG_SIZE) { // Solid bottom border
-                frogYpos += frogYspeed;
+            if (downArrowKeyPressed && playerYpos < canvas.height - PLAYER_SIZE) { // Solid bottom border
+                playerYpos += playerYspeed;
             }
 
-            if (rightArrowKeyPressed && frogXpos < canvas.width - FROG_SIZE) { // Solid Side
-                frogXpos += frogXspeed;
+            if (rightArrowKeyPressed && playerXpos < canvas.width - PLAYER_SIZE) { // Solid Side
+                playerXpos += playerXspeed;
             }
 
-            if (leftArrowKeyPressed && frogXpos > 0) {
-                frogXpos -= frogXspeed;
+            if (leftArrowKeyPressed && playerXpos > 0) {
+                playerXpos -= playerXspeed;
             }
 
         }
@@ -300,7 +334,7 @@
             img.bg = new Image();
             img.bg.src = 'javaimg/background.png'
             img.player = new Image();
-            img.player.src = 'sprites/player.png'
+            img.player.src = 'javaimg/player.png'
             img.obstacle = new Image();
             img.obstacle.src = 'javaimg/carenemy.png' // Images for character, obstacles and background
 
@@ -308,9 +342,9 @@
         }
 
         function startPos() {
-            frogXpos = canvas.width / 2 - FROG_SIZE / 2;
-            frogYpos = canvas.height - FROG_SIZE;
-            canvas.height - FROG_SIZE;
+            playerXpos = canvas.width / 2 - PLAYER_SIZE / 2;
+            playerYpos = canvas.height - PLAYER_SIZE;
+            canvas.height - PLAYER_SIZE;
             if (cars.length > 0) { // Starting position for character
 
                 for (i = 0; i < carTotal; i++) {
