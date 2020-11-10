@@ -4,14 +4,14 @@
 
 <head>
 
-    <title>Canvas</title>
+    <title>RoadCrosser</title>
 
 </head>
 
 
 
 <body>
-
+<h1>Use arrowkeys to move</h1>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
 
 
@@ -32,7 +32,7 @@
         var maxSpeed = 0;
         var minSpeed = 0;
         while (difficulty != 'easy' && difficulty != 'medium' && difficulty != 'hard') {
-            difficulty = prompt('What difficulty would you like? Easy, Medium or Hard') || ''; //Prompt repeats if not a difficulty
+            difficulty = prompt('What difficulty would you like? Easy, Medium or Hard','easy') || ''; //Prompt repeats if not a difficulty
             difficulty.toLowerCase();
             console.log(difficulty);
         }
