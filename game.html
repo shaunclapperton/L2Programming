@@ -1,0 +1,393 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Road Crossing</title>
+</head>
+
+<body>
+    <h1> Road Cross</h1> <br>
+    <p>Use the arrow keys to move.<br> Avoid the cars to cross the road!</p>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <style>
+        h1 {
+            color: black;
+            text-align: center;
+           font-size: 42px;
+            
+        }
+
+        p {
+            color: black;
+            text-align: left;
+            font-family: cursive;
+            font-size: 22px;
+        }
+
+
+        html {
+            background-color: green;
+        }
+
+        canvas {
+            display: block;
+            margin: auto;
+        }
+
+    </style>
+    <!--end of style function -->
+
+    <script>
+        var canvas, canvasContext;
+
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            canvasContext = canvas.getContext('2d');
+
+            document.addEventListener('keydown', keyPressed);
+            document.addEventListener('keyup', keyReleased);
+
+
+            setInterval(mainloop, 1000 / 50);
+        } //end func
+
+        var username = '';
+        var userNamePass = false;
+        var difficulty = '';
+
+        while (username == false) {
+            username = prompt('What is your name?');
+            if (username != null && username != '') {
+                userNamePass = true;
+            } //allows player to input username without skipping
+        }
+
+        if (difficulty != 'easy' || difficulty != 'hard') {
+            var pass = false;
+            while (pass == false) {
+                difficulty = prompt('What difficulty do you want to play at, Easy or Hard?', 'easy');
+                if (difficulty == null) {
+                    difficulty = '';
+                }
+                if (difficulty.toLowerCase() == 'easy' || difficulty.toLowerCase() == 'hard') {
+                    pass = true;
+                }
+            } //Asks player for difficulty, can't be passed - has to be either easy or hard
+        }
+
+        //speed for cars (loop)
+        var maxSpeed = 14;
+        var minSpeed = 8;
+
+        // Player Variables
+        var playerXpos = 0;
+        var playerYpos = 0;
+        const PLAYER_SIZE = 20;
+        const PLAYER_WIDTH = 37;
+        const PLAYER_HEIGHT = 49;
+        var playerXspeed = 8;
+        var playerYspeed = 8;
+
+        if (difficulty == 'easy') { //speed for cars using the random loop
+            maxSpeed = 8;
+            minSpeed = 10;
+        } else {
+            maxSpeed = 15;
+            minSpeed = 14;
+        }
+
+        //player movement variables
+        var leftKeyPressed = false;
+        var rightKeyPressed = false;
+        var upKeyPressed = false;
+        var downKeyPressed = false;
+        const LEFT_KEY = 37;
+        const RIGHT_KEY = 39;
+        const UP_KEY = 38;
+        const DOWN_KEY = 40;
+
+        // player spriteSheet variables
+        var playerSrcX = 0;
+        var playerSrcY = 0;
+        var playerSpriteImgNum = 0;
+        var playerSprites = [];
+        var playertotal = 16;
+        var playerRowCount = 0;
+        var antiFrameRate = 0.1;
+
+        //Cars in game
+        var cars = [];
+        var totalCars = 6;
+
+        //score
+        var score = 0;
+        var lives = 3;
+
+
+        var startingPos = true;
+        var gameRun = true;
+
+        function mainloop() {
+            if (gameRun) {
+                drawBg(bgImage, 0, 0, canvas.width, canvas.height);
+
+                drawImg(player,
+                    playerSrcX, playerSrcY,
+                    PLAYER_WIDTH, PLAYER_HEIGHT,
+                    playerXpos, playerYpos, PLAYER_WIDTH, PLAYER_HEIGHT
+                ); //draws Player Image
+                if (startingPos) {
+                    startPos();
+                    startingPos = false;
+                }
+
+                if (lives < 1) {
+                    gameRun = false;
+                } //causes the game to stop running once the lives reach less than 0
+
+                playerAnimate();
+                carMove();
+                carDraw();
+
+                drawText('Score: ' + score, 17, 27, '30px Arial', 'black'); //shows score
+                drawText('Lives: ' + lives, 480, 27, '30px Arial', 'black'); //shows lives
+
+            } else {
+                colorRect(0, 0, canvas.width, canvas.height, 'black');
+                drawText('Game over, ' + username + ' final score: ' + score, canvas.width / 3, canvas.height / 2, '50 px Arial', 'white') //end of game screen - shows the username selected and the score
+
+            }
+
+        } //end mainLoop func
+
+
+        function startPos() { //starting position for players
+            playerXpos = ((canvas.width / 2) - (PLAYER_SIZE / 2));
+            playerYpos = (canvas.height - PLAYER_SIZE * 2);
+
+            for (i = 0; i < totalCars; i++) {
+                makeCar(); //loop for cars
+            }
+
+        } //end of startPos func
+
+        function carMove() { //allows the cars to spawn in different positions (random) and different speeds throughout the canvas
+            cars.forEach(function(car, i) {
+                car.carDxpos += car.carXspeed;
+                if (car.carDxpos > canvas.width) {
+                    var carLane = Math.floor(Math.random() * 4) + 1;
+                    car.carDxpos = 0 - car.carDwidth;
+                    car.carDypos = carLane * (car.carDheight * 2.05);
+                    if (carLane == 1) {
+                        car.carDypos = carLane * (car.carDheight * 2);
+                    } else {
+                        car.carDypos = carLane * (car.carDheight * 2.05);
+                    }
+                    car.carXspeed = Math.floor(Math.random() * (maxSpeed - minSpeed)) + minSpeed;
+                }
+                if (car.carDypos + (car.carDheight - 1.5) > playerYpos && car.carDypos < playerYpos + (PLAYER_HEIGHT - 1.5) && car.carDxpos + (car.carDwidth - 1.5) > playerXpos && car.carDxpos < playerXpos + (PLAYER_WIDTH - 1.5)) {
+                    playerYpos = canvas.height - PLAYER_HEIGHT;
+                    lives--; //causes the player to lose a life each time it is hit by the car
+                } //collision mechanics
+            })
+
+
+        } //end of carMove function
+
+        function keyPressed(evt) {
+            if (evt.keyCode == LEFT_KEY) {
+                leftKeyPressed = true;
+            }
+            if (evt.keyCode == RIGHT_KEY) {
+                rightKeyPressed = true;
+            }
+            if (evt.keyCode == UP_KEY) {
+                upKeyPressed = true;
+            }
+            if (evt.keyCode == DOWN_KEY) {
+                downKeyPressed = true;
+            }
+        } // end of keyPressed func
+
+        function keyReleased(evt) {
+            if (evt.keyCode == LEFT_KEY) {
+                leftKeyPressed = false;
+            }
+            if (evt.keyCode == RIGHT_KEY) {
+                rightKeyPressed = false;
+            }
+            if (evt.keyCode == UP_KEY) {
+                upKeyPressed = false;
+            }
+            if (evt.keyCode == DOWN_KEY) {
+                downKeyPressed = false;
+            }
+        } // end of keyReleased func
+
+        for (var i = 0; i < playertotal; i++) {
+            playerSprites[i] = new Array(2);
+
+            playerSprites[i][0] = PLAYER_WIDTH * (i % 4);
+
+            if (i != 0 && i % 4 == 0) {
+                playerRowCount++;
+                playerSprites[i][1] = PLAYER_HEIGHT * playerRowCount;
+            } else {
+                playerSprites[i][1] = PLAYER_HEIGHT * playerRowCount;
+            }
+
+        } // end func
+
+
+        function playerAnimate() {
+            playerSrcX = playerSprites[Math.floor(playerSpriteImgNum)][0];
+            playerSrcY = playerSprites[Math.floor(playerSpriteImgNum)][1];
+
+
+            if (leftKeyPressed && playerXpos > 0) {
+                playerSpriteImgNum += antiFrameRate;
+                playerXpos -= playerXspeed;
+
+                if (playerSpriteImgNum > 11 || playerSpriteImgNum < 8) {
+                    playerSpriteImgNum = 8;
+                }
+            } //end left move && allows spritesheet to work, and player to move, stop player from going past left wall
+
+
+            if (rightKeyPressed && playerXpos < canvas.width - PLAYER_SIZE * 2) {
+                playerSpriteImgNum += antiFrameRate;
+                playerXpos += playerXspeed;
+
+                if (playerSpriteImgNum > 7 || playerSpriteImgNum < 4) {
+                    playerSpriteImgNum = 4;
+                }
+            } //end right move && allows spritesheet to work, and player to move, stop player from going past right wall
+
+            if (upKeyPressed && playerYpos > 0) {
+                playerSpriteImgNum += antiFrameRate;
+                playerYpos -= playerYspeed;
+
+                if (playerSpriteImgNum > 15 || playerSpriteImgNum < 12) {
+                    playerSpriteImgNum = 12;
+                }
+            } //end up move && allows spritesheet to work, and player to move, stop player from going past top wall
+
+
+            if (downKeyPressed && playerYpos < canvas.height - PLAYER_SIZE * 2) {
+                playerSpriteImgNum += antiFrameRate;
+                playerYpos += playerYspeed;
+
+                if (playerSpriteImgNum > 3 || playerSpriteImgNum < 0) {
+                    playerSpriteImgNum = 0;
+                }
+
+            } //end down move && allows spritesheet to work, and player to move, stop player from going past bottom wall
+
+            if (playerYpos <= 0) {
+                playerYpos = (canvas.height - PLAYER_SIZE * 2);
+                playerXpos = (canvas.width / 2) - (PLAYER_SIZE / 2)
+                score++;
+                // When player is touching top edge of screen increases there score up and spawn at the bottom of the screen
+            }
+            if (playerSpriteImgNum >= playertotal) {
+                playerSpriteImgNum = 0;
+            }
+        } //end playerAnimate func
+
+        function makeCar() {
+            var carLane = Math.floor(Math.random() * 4) + 1; //lanes for the cars to spawn in
+
+            //car variables
+            var carXpos = 0;
+            var carYpos = 0;
+            const CAR_WIDTH = 500;
+            const CAR_HEIGHT = 300;
+            var carDwidth = 90;
+            var carDheight = 45;
+            var carDxpos = 0 + carDwidth;
+            var carDypos = 0;
+
+
+            if (carLane == 1) {
+                carDypos = carLane * (carDheight * 1.2);
+            } else {
+                carDypos = carLane * (carDheight * 2.05);
+            }
+            var carXspeed = Math.floor(Math.random() * (maxSpeed - minSpeed)) + minSpeed; //randomly spawn cars in the lanes
+
+            var car = {
+                carXpos: carXpos,
+                carYpos: carYpos,
+                CAR_WIDTH: CAR_WIDTH,
+                CAR_HEIGHT: CAR_HEIGHT,
+                carDxpos: carDxpos,
+                carDypos: carDypos,
+                carDwidth: carDwidth,
+                carDheight: carDheight,
+                carXspeed: carXspeed
+            }
+
+            cars.push(car);
+        } //end of makecar function
+
+        function carDraw() {
+            cars.forEach(function(car, i) {
+
+
+                drawImg(carImg, car.carXpos, car.carYpos, car.CAR_WIDTH, car.CAR_HEIGHT, car.carDxpos, car.carDypos, car.carDwidth, car.carDheight); //allows the image drawing for the car positions
+
+            });
+        } //end of carDraw function
+
+        var player = new Image();
+        var carImg = new Image();
+        var bgImage = new Image();
+        bgImage.src = 'images/bg.png';
+        player.src = 'images/player.png';
+        carImg.src = 'images/carImg.png';
+
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        function colorRect(x, y, w, h, c) {
+            canvasContext.fillStyle = c;
+            canvasContext.fillRect(x, y, w, h);
+        } //end of colorRect funtion
+
+
+        function drawImg(img, sx, sy, sw, sh, dx, dy, dw, dh) {
+            canvasContext.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+        } //end of drawImg function
+
+        function drawBg(src, x, y, w, h) {
+            canvasContext.drawImage(src, x, y, w, h);
+        } //end of drawBg func
+        // Draw Images on canvas function
+
+        function drawText(msg, x, y, f, c) {
+            canvasContext.fillStyle = c;
+            canvasContext.font = f;
+            canvasContext.fillText(msg, x, y);
+        } //end of drawText func
+        //button allows the 'Play Again' button to appear, and for it to stop then start the game again
+
+    </script>
+    <button onclick="location.reload()"> Play Again</button>
+</body>
+
+</html>
